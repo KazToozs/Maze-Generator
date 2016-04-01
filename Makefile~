@@ -1,0 +1,22 @@
+
+SRC	=	manu.ml
+
+OPT	=	ocamlopt
+
+BC	=	ocamlc	
+
+RM	=	rm -f
+
+
+
+all:	opt bc
+
+opt:	
+
+bc:	
+
+clean:
+
+fclean: 
+
+re: fclean all
