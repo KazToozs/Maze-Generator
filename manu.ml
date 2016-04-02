@@ -1,32 +1,139 @@
 type cell = {posx : int; posy : int; idx : int}
 type door = {is_open: bool; first_door_idx : int; second_door_idx : int}
+let x = ref 0
+let y = ref 0
+let listCell = ref []
+let listDoorH = ref []
+let listDoorV = ref []
 
-let fill_cell x y =
-  let rec fill_cell_b a b =
-    if b != 0
-    then if a != 0
-         then {posx = a - 1; posy = b - 1; idx = a - 1 + (b - 1) * x}::fill_cell_b (a - 1) b
-         else fill_cell_b x (b - 1)
-    else []
-  in (fill_cell_b x y);;
+let rec fill_cell a b =
+  if b != 0
+  then if a != 0
+       then
+         {posx = a - 1; posy = b - 1; idx = a - 1 + (b - 1) * !x}::fill_cell (a - 1) b
+       else fill_cell !x (b - 1)
+  else []
 
+let rec fill_doorH a b =
+  if b > 1
+  then if a != 0
+       then {is_open = false; first_door_idx = ((!x * (b - 1)) + a - !x - 1);
+             second_door_idx = ((!x * (b - 1)) + a - 1)}::fill_doorH (a - 1) b
+       else fill_doorH !x (b - 1)
+  else []
 
-let fill_doorV x y =
-  let rec fill_door_a a b =
-    if b > 1
-    then if a != 0
-         then {is_open = false; first_door_idx = ((x * (b - 1)) + a - x - 1);
-               second_door_idx = ((x * (b - 1)) + a - 1)}::fill_door_a (a - 1) b
-         else fill_door_a x (b - 1)
-    else []
-  in (fill_door_a x y);;
+let rec fill_doorV a b =
+  if b != 0
+  then if a > 1
+       then {is_open = false; first_door_idx = (a - 1 + ((b - 1) * !x - 1));
+             second_door_idx = (a - 1 + ((b - 1) * !x))}::fill_doorV (a - 1) b
+         else fill_doorV !x (b - 1)
+  else []
 
-let fill_doorH x y =
-  let rec fill_door_b a b =
-    if b != 0
-    then if a > 1
-         then {is_open = false; first_door_idx = (a - 1 + ((b - 1) * x - 1));
-               second_door_idx = (a - 1 + ((b - 1) * x))}::fill_door_b (a - 1) b
-         else fill_door_b x (b - 1)
-    else []
-  in (fill_door_b x y);;
+let door_is_open listDoorH x y x_lim =
+  print_int x;
+  (List.nth listDoorH (x + (y * (x_lim - 1)) - 1)).is_open;
+;;
+
+let rec print_doorH listDoorH count x x_lim y =
+  if count == 0
+  then
+    begin
+      print_string "\n|   ";
+      print_doorH listDoorH (count + 1) x x_lim y
+    end
+  else if count != (x_lim + 1)
+  then
+    begin
+      if (door_is_open listDoorH count y x_lim) == true
+      then
+        begin
+          print_string "    ";
+          print_doorH listDoorH (count + 1) x x_lim y
+        end
+      else
+        begin
+          print_string "|   ";
+          print_doorH listDoorH (count + 1) x x_lim y
+        end
+    end
+  else if count == (x_lim + 1)
+  then
+    begin
+      print_char '|';
+    end
+
+let rec print_Vdoor listDoorV count x x_lim y =
+  if count == 0
+  then
+    begin
+      print_string "\n+";
+      print_Vdoor listDoorV (count + 1) x x_lim y
+    end
+  else if count != (x_lim + 2)
+  then
+    begin
+      if (door_is_open listDoorV x y x_lim) == true
+      then
+        begin
+          print_string "  +";
+          print_Vdoor listDoorV (count + 1) x x_lim y
+        end
+      else
+        begin
+          print_string "---+";
+          print_Vdoor listDoorV (count + 1) x x_lim y
+        end
+    end
+
+let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
+  match listCell with
+  | [] -> []
+  | head::body ->
+     begin
+       if y == 0
+       then
+         begin
+           print_string "+--+";
+           if x != x_lim
+           then
+             print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
+           else
+             begin
+               print_char '+';
+               print_doorH listDoorH 0 x x_lim y;
+               print_maze body listDoorH listDoorV x_lim y_lim 0 (y + 1)
+             end
+         end
+       else if x == x_lim
+       then
+         begin
+           print_doorH listDoorH 0 x x_lim y;
+           print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
+         end
+       else if y != 0 && x != x_lim
+       then
+         begin
+           print_doorH listDoorH 0 x x_lim y;
+           print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
+         end
+       else
+         begin
+           print_Vdoor listDoorV 0 x x_lim y;
+           print_char '\n';
+           print_maze body listDoorH listDoorV x_lim y_lim 0 (y + 1)
+         end
+     end
+
+let maze =
+  x := int_of_string(Sys.argv.(1));
+  y := int_of_string(Sys.argv.(2));
+  listCell := fill_cell !x !y;
+  listDoorH := fill_doorH !x !y;
+  listDoorV := fill_doorV !x !y;
+  print_maze !listCell !listDoorH !listDoorV !x !y 0 0
+;;
+  
+let main =
+  maze
+;;
