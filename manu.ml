@@ -31,59 +31,68 @@ let rec fill_doorV a b =
   else []
 
 let door_is_open listDoorH x y x_lim =
-  print_int x;
   (List.nth listDoorH (x + (y * (x_lim - 1)) - 1)).is_open;
 ;;
 
-let rec print_doorH listDoorH count x x_lim y =
-  if count == 0
+let rec print_doorH listDoorH count x x_lim y y_lim =
+  if ((x + (y * (x_lim - 1)) - 1) < (x_lim * y_lim))
   then
     begin
-      print_string "\n|   ";
-      print_doorH listDoorH (count + 1) x x_lim y
-    end
-  else if count != (x_lim + 1)
-  then
-    begin
-      if (door_is_open listDoorH count y x_lim) == true
+      if count == 0
       then
         begin
-          print_string "    ";
-          print_doorH listDoorH (count + 1) x x_lim y
+          print_string "\n|   ";
+          print_doorH listDoorH (count + 1) x x_lim y y_lim
         end
-      else
+      else if count != (x_lim)
+      then
         begin
-          print_string "|   ";
-          print_doorH listDoorH (count + 1) x x_lim y
+          if (door_is_open listDoorH count y x_lim) == true
+          then
+            begin
+              print_string "    ";
+              print_doorH listDoorH (count + 1) x x_lim y y_lim
+            end
+          else
+            begin
+              print_string "|   ";
+              print_doorH listDoorH (count + 1) x x_lim y y_lim
+            end
         end
-    end
-  else if count == (x_lim + 1)
-  then
-    begin
-      print_char '|';
+      else if count == (x_lim)
+      then
+        begin
+          print_char '|';
+        end
     end
 
-let rec print_Vdoor listDoorV count x x_lim y =
-  if count == 0
+let rec print_Vdoor listDoorV count x x_lim y y_lim=
+  if ((x + (y * (x_lim - 1)) - 1) < (x_lim * y_lim))
   then
     begin
-      print_string "\n+";
-      print_Vdoor listDoorV (count + 1) x x_lim y
-    end
-  else if count != (x_lim + 2)
-  then
-    begin
-      if (door_is_open listDoorV x y x_lim) == true
-      then
-        begin
-          print_string "  +";
-          print_Vdoor listDoorV (count + 1) x x_lim y
-        end
-      else
-        begin
-          print_string "---+";
-          print_Vdoor listDoorV (count + 1) x x_lim y
-        end
+      begin
+        if count == 0
+        then
+          begin
+            print_string "\n+";
+            print_Vdoor listDoorV (count + 1) x x_lim y y_lim
+          end
+        else if count != (x_lim + 1)
+        then
+          begin
+            if (door_is_open listDoorV x y x_lim) == true
+            then
+              begin
+                print_string "  +";
+                print_Vdoor listDoorV (count + 1) x x_lim y y_lim
+              end
+            else
+              begin
+                print_string "---+";
+                print_Vdoor listDoorV (count + 1) x x_lim y y_lim
+              end
+          end
+      end
     end
 
 let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
@@ -94,33 +103,35 @@ let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
        if y == 0
        then
          begin
-           print_string "+--+";
            if x != x_lim
            then
-             print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
+             begin
+               print_string "+--+";
+               print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
+             end
            else
              begin
                print_char '+';
-               print_doorH listDoorH 0 x x_lim y;
+               print_doorH listDoorH 0 x x_lim y y_lim;
                print_maze body listDoorH listDoorV x_lim y_lim 0 (y + 1)
              end
          end
        else if x == x_lim
        then
          begin
-           print_doorH listDoorH 0 x x_lim y;
+           print_doorH listDoorH 0 x x_lim y y_lim;
            print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
          end
-       else if y != 0 && x != x_lim
-       then
-         begin
-           print_doorH listDoorH 0 x x_lim y;
-           print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
-         end
+       (* else if y != 0 && x != x_lim *)
+       (* then *)
+       (*   begin *)
+       (*     print_doorH listDoorH 0 x x_lim y; *)
+       (*     print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y *)
+       (*   end *)
        else
          begin
-           print_Vdoor listDoorV 0 x x_lim y;
-           print_char '\n';
+           print_Vdoor listDoorV 0 x x_lim y y_lim;
+           print_doorH listDoorH 0 x x_lim y y_lim;
            print_maze body listDoorH listDoorV x_lim y_lim 0 (y + 1)
          end
      end
