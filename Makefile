@@ -7,13 +7,14 @@ BC	=	ocamlc
 
 RM	=	rm -f
 
-OBJ	=	*.cmo *.cmi *.cmx
+OBJB	=	$(SRC:.ml=.cmo) $(SRC:.ml=.cmi)
+
+OBJ	=	$(SRC:.ml=.cmi) $(SRC:.ml=.cmx) $(SRC:.ml=.o)
 
 FLAGS	=	-w Aelz -warn-error A
 
 NAME	=	step1
 
-NAMEC	=	step1
 
 all:	$(NAME)
 
@@ -23,9 +24,10 @@ $(NAME):
 
 clean:	
 	$(RM) $(OBJ)
+	$(RM) $(OBJB)
 
 fclean: clean
 	$(RM) $(NAME)
-	$(RM) $(NAMEC)
+	$(RM) $(NAME).byte
 
 re: fclean all
