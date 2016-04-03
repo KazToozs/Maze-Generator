@@ -11,32 +11,68 @@ let listCell = ref []
 let listDoorH = ref []
 let listDoorV = ref []
 
-let rec fill_cell a b =
-  match b with
-  | 0 -> []
-  | _ ->
-     (match a with
-      | 0 -> fill_cell !x (b - 1);
-      | _ -> {idx = a - 1 + (b - 1) * !x; visited = false}::fill_cell (a - 1) b)
+let rec fill_cell a b l = match b with
+  | 1 -> (match a with
+          | 0 -> l;
+          | _ -> fill_cell (a - 1) b ({idx = a - 1; visited = false}::l)
+         )
+  | _ -> (match a with
+          | 0 -> fill_cell !x (b - 1) (l);
+          | _ -> fill_cell (a - 1) b ({idx = (a - 1) + (b - 1) * !x; visited = false}::l)
+         )
 
-let rec fill_doorV a b =
-  match b with
-  | 0 -> []
-  | 1 -> []
-  | _ ->
-     (match a with
-      | 0 -> fill_doorV !x (b - 1)
-      | _ -> {isOpen = false; fstCellIdx = ((!x * (b - 1) + a - !x - 1));
-             scdCellIdx = ((!x * (b - 1) + a - 1))}::fill_doorV (a - 1) b)
+let rec fill_doorV a b l = match b with
+  | 0 -> l;
+  | _ -> (match a with
+          | 0 -> fill_doorV !x (b - 1) (l);
+          | a when a = !x -> fill_doorV (a - 1) b l;
+          | _ -> fill_doorV (a - 1)
+                            b
+                            ({isOpen = false; fstCellIdx = ((!x * (b - 1) + a - 1));
+                              scdCellIdx = ((!x * (b - 1) + a))}::l)
+         )
+
+let rec fill_doorH a b l = match b with
+  | 0 -> l;
+  | b when b = !y -> fill_doorH a (b - 1) l;
+  | _ -> (match a with
+          | 0 -> fill_doorH !x (b - 1)
+                            ({isOpen = false; fstCellIdx = (a + !x * (b - 1));
+                              scdCellIdx = (a + !x * b)}::l);
+          | a when a = !x -> fill_doorH (a - 1) b (l);
+          | _ -> fill_doorH (a - 1) b 
+                            ({isOpen = false; fstCellIdx = (a + !x * (b - 1));
+                              scdCellIdx = (a + !x * b)}::l);
+         )
+
+
+
+(* let rec fill_cell a b = *)
+(*   match b with *)
+(*   | 0 -> [] *)
+(*   | _ -> *)
+(*      (match a with *)
+(*       | 0 -> fill_cell !x (b - 1); *)
+(*       | _ -> {idx = a - 1 + (b - 1) * !x; visited = false}::fill_cell (a - 1) b) *)
+
+(* let rec fill_doorV a b = *)
+(*   match b with *)
+(*   | 0 -> [] *)
+(*   | 1 -> [] *)
+(*   | _ -> *)
+(*      (match a with *)
+(*       | 0 -> fill_doorV !x (b - 1) *)
+(*       | _ -> {isOpen = false; fstCellIdx = ((!x * (b - 1) + a - !x - 1)); *)
+(*              scdCellIdx = ((!x * (b - 1) + a - 1))}::fill_doorV (a - 1) b) *)
       
-let rec fill_doorH a b =
-  match b with
-  | 0 -> []
-  | _ ->
-     (match a with
-      | 1 -> fill_doorH !x (b - 1)
-      | _ -> {isOpen = false; fstCellIdx = ((!x * (b - 1)) + a - 2);
-             scdCellIdx = ((!x * (b - 1)) + a - 1)}::fill_doorH (a - 1) b)
+(* let rec fill_doorH a b = *)
+(*   match b with *)
+(*   | 0 -> [] *)
+(*   | _ -> *)
+(*      (match a with *)
+(*       | 1 -> fill_doorH !x (b - 1) *)
+(*       | _ -> {isOpen = false; fstCellIdx = ((!x * (b - 1)) + a - 2); *)
+(*              scdCellIdx = ((!x * (b - 1)) + a - 1)}::fill_doorH (a - 1) b) *)
 
 let doorIsOpen listDoorH x y x_lim =
   (List.nth listDoorH (x + (y * (x_lim - 1)) - 1)).isOpen;
@@ -394,31 +430,45 @@ let rec print_list listCell =
          print_list body)
 ;;
 
+(* let check_Arg = *)
+(*   if ((Array.length Sys.argv - 1) != 4 && (Array.length Sys.argv - 1) != 0) then *)
+(*     begin *)
+(*       print_endline "Usage: ./step1 -r [x > 1] -c [y > 1]"; *)
+(*       false; *)
+(*     end *)
+(*   else *)
+(*     begin *)
+(*       if ((String.compare Sys.argv.(1) "-r") = 0)  *)
+(*       then *)
+(*         try int_of_string(Sys.argv.(2)) with *)
+(*         |  *)
+(*         x := int_of_string(Sys.argv.(2)); *)
+(*       y := int_of_string(Sys.argv.(2)); *)
+(* ;; *)
+
 let maze =
   Random.self_init();
-  if ((Array.length Sys.argv - 1) != 2) then
-    exit 0;
+  (* if check_Arg = true *)
+  (* then *)
+  (*   begin *)
   x := int_of_string(Sys.argv.(1));
   y := int_of_string(Sys.argv.(2));
-  if !x > 1 && !y > 1
-  then
-    begin
-      start := (Random.int (!x * !y) - 1);
-      cell_end := (Random.int (!x * !y) - 1);
-      if (!start < 0 || !start > (!x * !y))
-      then start := 0;
-      listCell := fill_cell !x !y;
-      listDoorV := fill_doorV !x !y;
-      listDoorH := fill_doorH !x !y;
-      listCell := List.rev !listCell;
-      listDoorV := List.rev !listDoorV;
-      listDoorH := List.rev !listDoorH;
-      listCell := putVisited !listCell (List.nth !listCell !start);
-      fill_path !start;
-      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
-    end
-  else
-    print_endline "./step1 [x > 1] [y > 1]";
+  start := (Random.int (!x * !y) - 1);
+  cell_end := (Random.int (!x * !y) - 1);
+  if (!start < 0 || !start > (!x * !y))
+  then start := 0;
+  listCell := fill_cell !x !y [];
+  listDoorV := fill_doorV !x !y [];
+  listDoorH := fill_doorH !x !y [];
+  listCell := List.rev !listCell;
+  listDoorV := List.rev !listDoorV;
+  listDoorH := List.rev !listDoorH;
+  listCell := putVisited !listCell (List.nth !listCell !start);
+  (* fill_path !start; *)
+  (* print_maze !listCell !listDoorH !listDoorV !x !y 0 0; *)
+(*   end *)
+(* else *)
+  (*   print_endline "./step1 [x > 1] [y > 1]"; *)
 ;;
   
 let main =
