@@ -22,6 +22,9 @@ $(NAME):
 	$(OPT) -o $(NAME) $(FLAGS) $(SRC)
 	$(BC) -o $(NAME).byte $(FLAGS) $(SRC)
 
+byte:
+	$(BC) -o $(NAME).byte $(FLAGS) $(SRC)
+
 clean:	
 	$(RM) $(OBJ)
 	$(RM) $(OBJB)

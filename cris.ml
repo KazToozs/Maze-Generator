@@ -259,7 +259,7 @@ let getDownCell listDoorH pos listCell =
 
 (* let rec putVisited listCell toMatch = *)
 (*   match listCell with *)
-(*   | head::body ->      *)
+(*   | head::body -> *)
 (*      if (toMatch.idx = head.idx) *)
 (*      then {idx = head.idx; visited = true}::(putVisited body toMatch) *)
 (*      else head::(putVisited body toMatch) *)
@@ -270,18 +270,27 @@ let rec putVisited listCell toMatch l =
   match listCell with
   | head::body ->
      if (toMatch.idx = head.idx)
-     then putVisited body toMatch ({idx = head.idx; visited = true}::body)
-     else putVisited body toMatch (head::body)
-  | [] -> l
+     then putVisited body toMatch ({idx = head.idx; visited = true}::l)
+     else putVisited body toMatch (head::l)
+  | [] -> List.rev l
 ;;
+
+(* let rec putOpen listDoor toMatch = *)
+(*   match listDoor with *)
+(*   | head::body -> *)
+(*      if (toMatch.fstCellIdx = head.fstCellIdx && toMatch.scdCellIdx = head.scdCellIdx) *)
+(*      then {isOpen = true; fstCellIdx = head.fstCellIdx; scdCellIdx = head.scdCellIdx}::(putOpen body toMatch) *)
+(*      else head::(putOpen body toMatch) *)
+(*   | [] -> [] *)
+(* ;; *)
   
 let rec putOpen listDoor toMatch l =
   match listDoor with
   | head::body ->
      if (toMatch.fstCellIdx = head.fstCellIdx && toMatch.scdCellIdx = head.scdCellIdx)
-     then putOpen body toMatch ({isOpen = true; fstCellIdx = head.fstCellIdx; scdCellIdx = head.scdCellIdx}::body)
-     else putOpen body toMatch (head::body)
-  | [] -> l
+     then putOpen body toMatch ({isOpen = true; fstCellIdx = head.fstCellIdx; scdCellIdx = head.scdCellIdx}::l)
+     else putOpen body toMatch (head::l)
+  | [] -> List.rev l
 ;;
 
 let open_door pos move =
@@ -473,11 +482,11 @@ let maze =
   listDoorV := List.rev !listDoorV;
   listDoorH := List.rev !listDoorH;
   listCell := putVisited !listCell (List.nth !listCell !start) [];
-  (* fill_path !start; *)
-  (* print_maze !listCell !listDoorH !listDoorV !x !y 0 0; *)
-(*   end *)
+  fill_path !start;
+  print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+  (* end *)
 (* else *)
-  (*   print_endline "./step1 [x > 1] [y > 1]"; *)
+(*     print_endline "./step1 [x > 1] [y > 1]"; *)
 ;;
   
 let main =
