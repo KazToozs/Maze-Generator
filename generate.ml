@@ -250,13 +250,13 @@ let open_door pos move =
   then
     begin
       listCell := putVisited !listCell (List.nth !listCell (pos + 1)) [];
-      listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !y))) [];
+      listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !x))) [];
     end
   else if move = 2
   then
     begin
       listCell := putVisited !listCell (List.nth !listCell (pos - 1)) [];
-      listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !y) - 1)) [];
+      listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !x) - 1)) [];
     end
   else if move = 3
   then
