@@ -22,10 +22,9 @@ let rec fill_cell a b l = match b with
          )
 
 let rec fill_doorV a b l = match b with
-  | 0 -> l;
+  | 1 -> l;
   | _ -> (match a with
           | 0 -> fill_doorV !x (b - 1) (l);
-          | a when a = !x -> fill_doorV (a - 1) b l;
           | _ -> fill_doorV (a - 1)
                             b
                             ({isOpen = false; fstCellIdx = ((!x * (b - 1) + a - 1));
@@ -34,12 +33,10 @@ let rec fill_doorV a b l = match b with
 
 let rec fill_doorH a b l = match b with
   | 0 -> l;
-  | b when b = !y -> fill_doorH a (b - 1) l;
   | _ -> (match a with
-          | 0 -> fill_doorH !x (b - 1)
+          | 1 -> fill_doorH !x (b - 1)
                             ({isOpen = false; fstCellIdx = (a + !x * (b - 1));
                               scdCellIdx = (a + !x * b)}::l);
-          | a when a = !x -> fill_doorH (a - 1) b (l);
           | _ -> fill_doorH (a - 1) b
                             ({isOpen = false; fstCellIdx = (a + !x * (b - 1));
                               scdCellIdx = (a + !x * b)}::l);
@@ -394,7 +391,7 @@ let setX a =
 let setY a =
   y := a
 
-let maze =
+let maze () =
   x := 10;
   y := 10;
   let arg = [("-r", Arg.Int (setX), "X get");
@@ -411,7 +408,6 @@ let maze =
      listCell := List.rev !listCell;
      listDoorV := List.rev !listDoorV;
      listDoorH := List.rev !listDoorH;
-     (* listDoorH := print_list !listDoorH; *)
      listCell := putVisited !listCell (List.nth !listCell !start) [];
      fill_path !start;
      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;

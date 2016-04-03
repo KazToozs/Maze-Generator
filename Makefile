@@ -1,9 +1,10 @@
 
-SRC	=	manu.ml
+SRC	=	generate.ml \
+		maze.ml
 
 OPT	=	ocamlopt
 
-BC	=	ocamlc	
+BC	=	ocamlc
 
 RM	=	rm -f
 
