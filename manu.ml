@@ -1,12 +1,13 @@
 type cell = {idx : int; visited : bool}
 type door = {isOpen: bool; fstCellIdx : int; scdCellIdx : int}
+let rand = ref 0
 let start = ref 0
-let x = ref 4
-let y = ref 4
+let x = ref 0
+let y = ref 0
 let listCell = ref []
 let listDoorH = ref []
 let listDoorV = ref []
-let listPath = ref[]
+(* let listPath = ref [] *)
 
 let rec fill_cell a b =
   match b with
@@ -39,16 +40,8 @@ let doorIsOpen listDoorH x y x_lim =
   (List.nth listDoorH (x + (y * (x_lim - 1)) - 1)).isOpen;
 ;;
 
-let doorIsOpenV listDoorH x y x_lim =
-  if y = 2
-  then
-    begin
-      (List.nth listDoorH (x + (y * (x_lim - 1)) - 1)).isOpen;
-    end
-  else
-    begin
-      (List.nth listDoorH (x + (y * (x_lim - 1)))).isOpen;
-    end
+let doorIsOpenV listDoorV x y x_lim =
+  (List.nth listDoorV (x + ((y - 1) * (x_lim)))).isOpen;
 ;;
 
 let rec print_doorH listDoorH count x x_lim y y_lim =
@@ -96,7 +89,7 @@ let rec print_Vdoor listDoorV count x x_lim y y_lim=
       else if count < (x_lim + 1)
       then
         begin
-          if (doorIsOpenV listDoorV (count - x_lim - 1) (y + 1) x_lim) == true
+          if (doorIsOpenV listDoorV (count - 1) y x_lim) == true
           then
             begin
                 print_string "   +";
@@ -172,165 +165,186 @@ let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
          end
      end
 
-(* let getRightCell listDoorH pos listCell = *)
-(*   if pos < !x *)
-(*   then *)
-(*     match (List.nth listCell (pos + 1)).visited with *)
-(*     | false -> *)
-(*        (match (List.nth listDoorH (pos + 1)).scdCellIdx with *)
-(*         | pos -> true *)
-(*         | _ -> false) *)
-(*     | true -> false *)
-(*   else *)
-(*     false; *)
-(* ;; *)
+let getRightCell listDoorH pos listCell =
+  if ((pos + 1) mod !x != 0)
+  then
+    match (List.nth listCell (pos + 1)).visited with
+    | false ->
+       (match (List.nth listDoorH (pos - (pos / !y))).scdCellIdx with
+        | pos -> true)
+    | true -> false
+  else
+    false;
+;;
 
-(* let getLeftCell listDoorH pos listCell = *)
-(*   if pos > 1 *)
-(*   then *)
-(*     match (List.nth listCell (pos - 1)).visited with *)
-(*     | false -> *)
-(*        (match (List.nth listDoorH (pos)).scdCellIdx with *)
-(*         | pos -> true *)
-(*         | _ -> false) *)
-(*     | true -> false *)
-(*   else *)
-(*     false; *)
-(* ;; *)
+let getLeftCell listDoorH pos listCell =
+  if (pos mod !x != 0)
+  then
+    match (List.nth listCell (pos - 1)).visited with
+    | false ->
+       (match (List.nth listDoorH (pos - (pos / !y) - 1)).scdCellIdx with
+        | pos -> true)
+    | true -> false
+  else
+    false;
+;;
 
-(* let getUpCell listDoorH pos listCell = *)
-(*   if pos >= !x *)
-(*   then *)
-(*     match (List.nth listCell (pos - !x)).visited with *)
-(*     | false -> *)
-(*        (match (List.nth listDoorH (pos - !x)).scdCellIdx with *)
-(*         | pos -> true *)
-(*         | _ -> false) *)
-(*     | true -> false *)
-(*   else *)
-(*     false; *)
-(* ;; *)
+let getUpCell listDoorH pos listCell =
+  if pos >= (!x - 1)
+  then
+    match (List.nth listCell (pos - !x)).visited with
+    | false ->
+       (match (List.nth listDoorH (pos - !x)).scdCellIdx with
+        | pos -> true)
+    | true -> false
+  else
+    false;
+;;
 
-(* let getDownCell listDoorH pos listCell = *)
-(*   if pos < (!x * !y - !x) *)
-(*   then *)
-(*     match (List.nth listCell (pos + !x)).visited with *)
-(*     | false -> *)
-(*        (match (List.nth listDoorH (pos + 1)).scdCellIdx with *)
-(*         | pos -> true *)
-(*         | _ -> false) *)
-(*     | true -> false *)
-(*   else *)
-(*     false; *)
-(* ;; *)
+let getDownCell listDoorH pos listCell =
+  if pos <= ((!x * !y) - 1 - !x)
+  then
+    match (List.nth listCell (pos + !x)).visited with
+    | false ->
+       (match (List.nth listDoorH (pos)).scdCellIdx with
+        | pos -> true)
+    | true -> false
+  else
+    false;
+;;
 
-(* let rec putVisited myCell pos =  *)
-(*   match myCell with *)
-(*   | [] -> [] *)
-(*   | head::body -> *)
-(*      (match head.idx with *)
-(*       | pos -> {idx = head.idx; visited = true}::putVisited body pos; *)
-(*       | _ -> putVisited body pos); *)
-(* ;; *)
-
-let rec putVisited toMatch listCell =
+let rec putVisited listCell toMatch =
   match listCell with
-  | head::body ->
+  | head::body ->     
      if (toMatch.idx = head.idx)
-     then {idx = head.idx; visited = true}
-     else head::(putVisited toMatch body)
+     then {idx = head.idx; visited = true}::(putVisited body toMatch)
+     else head::(putVisited body toMatch)
   | [] -> []
 ;;
   
-(* let putOpen listDoorH = {isOpen = true; fstCellIdx = listDoorH.fstCellIdx; scdCellIdx = listDoorH.scdCellIdx}; *)
-(* ;; *)
-
-let open_door listDoorH listCell pos move =
-  match move with
-  | 0 -> []
-  | 1 ->
-     listCell := putVisited (List.nth listCell (pos + 1)) !listCell;
-       (* putOpen (List.nth listDoorH (pos + 1)) *)
-     (* (List.nth listCell (pos + 1)).visited := true; *)
-     (*     (List.nth listDoorH (pos + 1)).isOpen := true; *)
-  (* | 2 -> *)
-  (*    begin *)
-  (*      putVisited (List.nth listCell (pos - 1)); *)
-  (*      (\* putOpen (List.nth listDoorH (pos)); *\) *)
-  (*    end *)
-  (* | 3 -> *)
-  (*    begin *)
-  (*      putVisited (List.nth listCell (pos - !x)); *)
-  (*      (\* putOpen (List.nth listDoorH (pos - !x)); *\) *)
-  (*    end *)
-  (* | 4 -> *)
-  (*    begin *)
-  (*      putVisited (List.nth listCell (pos + !x)); *)
-  (*      (\* putOpen (List.nth listDoorH (pos + 1)); *\) *)
-  (*    end *)
-  | _ -> []
+let rec putOpen listDoor toMatch =
+  match listDoor with
+  | head::body ->
+     if (toMatch.fstCellIdx = head.fstCellIdx && toMatch.scdCellIdx = head.scdCellIdx)
+     then {isOpen = true; fstCellIdx = head.fstCellIdx; scdCellIdx = head.scdCellIdx}::(putOpen body toMatch)
+     else head::(putOpen body toMatch)
+  | [] -> []
 ;;
 
-(* let rec fill_path listDoorH listDoorV listCell pos nbTest = *)
-(*   match nbTest with *)
-(*   | 10 -> [] (\* a revoir *\) *)
-(*   | _ -> *)
-(*      (match (Random.int 4) with *)
-(*       | 1 -> *)
-(*          begin *)
-(*            if (getRightCell listDoorH pos) == true *)
-(*            then *)
-(*              begin *)
-(*                listDoorH := open_door listDoorH listCell pos 1; *)
-(*                fill_path listDoorH listDoorV listCell pos 0; *)
-(*              end *)
-(*            else *)
-(*              fill_path listDoorH listDoorV listCell pos (nbTest + 1); *)
-(*          end *)
-(*       | 2 -> *)
-(*          begin *)
-(*            if (getLeftCell listDoorH pos) == true *)
-(*            then *)
-(*              begin *)
-(*                open_door listDoorH listCell pos 2; *)
-(*                fill_path listDoorH listDoorV listCell pos 0; *)
-(*              end *)
-(*            else *)
-(*              fill_path listDoorH listDoorV listCell pos (nbTest + 1); *)
-(*          end *)
-(*       | 3 -> *)
-(*          begin *)
-(*            if (getUpCell listDoorV pos) == true *)
-(*            then *)
-(*              begin *)
-(*                open_door listDoorH listCell pos 3; *)
-(*                fill_path listDoorH listDoorV listCell pos 0; *)
-(*              end *)
-(*            else *)
-(*              fill_path listDoorH listDoorV listCell pos (nbTest + 1); *)
-(*          end *)
-(*       | 4 -> *)
-(*          begin *)
-(*            if (getDownCell listDoorV pos) == true *)
-(*            then *)
-(*              begin *)
-(*                open_door listDoorH listCell pos 4; *)
-(*                fill_path listDoorH listDoorV listCell pos 0; *)
-(*              end *)
-(*            else *)
-(*              fill_path listDoorH listDoorV listCell pos (nbTest + 1); *)
-(*          end) *)
-(* ;; *)
+let open_door pos move =
+  if move = 1
+  then
+    begin
+      print_endline "Droite";
+      listCell := putVisited !listCell (List.nth !listCell pos);
+      listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !y)));
+      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+    end
+  else if move = 2
+  then
+    begin
+      print_endline "gauche";
+      listCell := putVisited !listCell (List.nth !listCell pos);
+      listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !y) - 1));
+    end
+  else if move = 3
+  then
+    begin
+      print_endline "haut";
+      listCell := putVisited !listCell (List.nth !listCell pos);
+      listDoorV := putOpen !listDoorV (List.nth !listDoorV (pos - !x));
+      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+    end
+  else if move = 4
+  then
+    begin
+      print_endline "bas";
+      listCell := putVisited !listCell (List.nth !listCell pos);
+      listDoorV := putOpen !listDoorV (List.nth !listDoorV pos);
+      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+    end
+;;
+
+let rec isFinished listCell =
+  match listCell with
+  | [] -> true
+  | head::body ->
+     (match head.visited with
+      | true -> isFinished body
+      | false -> false)
+
+let rec fill_path pos =
+  rand := (Random.int 4);
+  print_int rand;
+  print_endline "begin";
+  print_int pos;
+  print_endline "<- pos";
+  if (isFinished !listCell) = false
+  then
+    begin
+      if !rand = 1
+      then
+        begin
+          if (getRightCell !listDoorH pos !listCell) == true
+          then
+            begin
+              open_door pos 1;
+              fill_path (pos + 1);
+            end
+          else
+            fill_path pos;
+        end
+      else if !rand = 2
+      then
+        begin
+          if (getLeftCell !listDoorH pos !listCell) == true
+          then
+            begin
+              open_door pos 2;
+              fill_path (pos - 1);
+            end
+          else
+            fill_path pos;
+        end
+      else if !rand = 3
+      then
+        begin
+          if (getUpCell !listDoorV pos !listCell) == true
+          then
+            begin
+              open_door pos 3;
+              fill_path (pos - !x);
+            end
+          else
+            fill_path pos;
+        end
+      else
+        begin
+          if (getDownCell !listDoorV pos !listCell) == true
+          then
+            begin
+              open_door pos 4;
+              fill_path (pos + !x);
+            end
+          else
+            fill_path pos;
+        end
+    end
+;;
 
 let maze =
   Random.self_init();
   x := int_of_string(Sys.argv.(1));
   y := int_of_string(Sys.argv.(2));
-  start := Random.int (!x * !y);
+  start := (Random.int (!x * !y) - 1);
   listCell := fill_cell !x !y;
   listDoorV := fill_doorV !x !y;
   listDoorH := fill_doorH !x !y;
-  fill_path !listDoorH !listDoorV !listCell !start 0;
+  listCell := List.rev !listCell;
+  listDoorV := List.rev !listDoorV;
+  listDoorH := List.rev !listDoorH;
+  print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+  fill_path !start;
   print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
 ;;
   
