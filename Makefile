@@ -1,5 +1,5 @@
 
-SRC	=	manu.ml
+SRC	=	cris.ml
 
 OPT	=	ocamlopt
 
