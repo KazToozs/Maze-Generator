@@ -1,37 +1,14 @@
-
-SRC	=	generate.ml \
-		maze.ml
-
-OPT	=	ocamlopt
-
-BC	=	ocamlc
-
-RM	=	rm -f
-
-OBJB	=	$(SRC:.ml=.cmo) $(SRC:.ml=.cmi)
-
-OBJ	=	$(SRC:.ml=.cmi) $(SRC:.ml=.cmx) $(SRC:.ml=.o)
-
-FLAGS	=	-w Aelz -warn-error A
-
-NAME	=	step1
-
-
-all:	$(NAME)
-
-$(NAME):
-	$(OPT) -o $(NAME) $(FLAGS) $(SRC)
-	$(BC) -o $(NAME).byte $(FLAGS) $(SRC)
+all:
+	$(MAKE) -C ./step1
 
 byte:
-	$(BC) -o $(NAME).byte $(FLAGS) $(SRC)
+	$(MAKE) -C ./step1 byte
 
-clean:	
-	$(RM) $(OBJ)
-	$(RM) $(OBJB)
+clean:
+	$(MAKE) -C ./step1/ clean
 
-fclean: clean
-	$(RM) $(NAME)
-	$(RM) $(NAME).byte
+fclean:
+	$(MAKE) -C ./step1/ fclean
 
-re: fclean all
+re:
+	$(MAKE) -C ./step1/ re
