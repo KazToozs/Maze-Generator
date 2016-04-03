@@ -1,13 +1,15 @@
+type path = {prevMove : int}
 type cell = {idx : int; visited : bool}
 type door = {isOpen: bool; fstCellIdx : int; scdCellIdx : int}
 let rand = ref 0
+let cell_end = ref 0
 let start = ref 0
 let x = ref 0
 let y = ref 0
+let listPath = ref []
 let listCell = ref []
 let listDoorH = ref []
 let listDoorV = ref []
-(* let listPath = ref [] *)
 
 let rec fill_cell a b =
   match b with
@@ -113,6 +115,7 @@ let rec print_last_line count x_lim =
   if count != 0
   then
     begin
+
       if count = 1
       then
         begin
@@ -168,11 +171,12 @@ let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
 let getRightCell listDoorH pos listCell =
   if ((pos + 1) mod !x != 0)
   then
-    match (List.nth listCell (pos + 1)).visited with
-    | false ->
-       (match (List.nth listDoorH (pos - (pos / !y))).scdCellIdx with
-        | pos -> true)
-    | true -> false
+    begin
+      match (List.nth listCell (pos + 1)).visited with
+      | false ->
+         true
+      | true -> false
+    end
   else
     false;
 ;;
@@ -180,23 +184,26 @@ let getRightCell listDoorH pos listCell =
 let getLeftCell listDoorH pos listCell =
   if (pos mod !x != 0)
   then
-    match (List.nth listCell (pos - 1)).visited with
-    | false ->
-       (match (List.nth listDoorH (pos - (pos / !y) - 1)).scdCellIdx with
-        | pos -> true)
-    | true -> false
+    begin
+      match (List.nth listCell (pos - 1)).visited with
+      | false ->
+       true
+      | true -> false
+    end
   else
     false;
 ;;
 
 let getUpCell listDoorH pos listCell =
-  if pos >= (!x - 1)
+  if pos >= !x
   then
-    match (List.nth listCell (pos - !x)).visited with
-    | false ->
-       (match (List.nth listDoorH (pos - !x)).scdCellIdx with
-        | pos -> true)
-    | true -> false
+    begin
+      match (List.nth listCell (pos - !x)).visited with
+      | false ->
+         true
+      | true ->
+         false
+    end
   else
     false;
 ;;
@@ -204,11 +211,12 @@ let getUpCell listDoorH pos listCell =
 let getDownCell listDoorH pos listCell =
   if pos <= ((!x * !y) - 1 - !x)
   then
-    match (List.nth listCell (pos + !x)).visited with
-    | false ->
-       (match (List.nth listDoorH (pos)).scdCellIdx with
-        | pos -> true)
-    | true -> false
+    begin
+      match (List.nth listCell (pos + !x)).visited with
+      | false ->
+         true
+      | true -> false
+    end
   else
     false;
 ;;
@@ -235,117 +243,182 @@ let open_door pos move =
   if move = 1
   then
     begin
-      print_endline "Droite";
-      listCell := putVisited !listCell (List.nth !listCell pos);
+      listCell := putVisited !listCell (List.nth !listCell (pos + 1));
       listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !y)));
-      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
     end
   else if move = 2
   then
     begin
-      print_endline "gauche";
-      listCell := putVisited !listCell (List.nth !listCell pos);
+      listCell := putVisited !listCell (List.nth !listCell (pos - 1));
       listDoorH := putOpen !listDoorH (List.nth !listDoorH (pos - (pos / !y) - 1));
     end
   else if move = 3
   then
     begin
-      print_endline "haut";
-      listCell := putVisited !listCell (List.nth !listCell pos);
+      listCell := putVisited !listCell (List.nth !listCell (pos - !x));
       listDoorV := putOpen !listDoorV (List.nth !listDoorV (pos - !x));
-      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
     end
   else if move = 4
   then
     begin
-      print_endline "bas";
-      listCell := putVisited !listCell (List.nth !listCell pos);
+      listCell := putVisited !listCell (List.nth !listCell (pos + !x));
       listDoorV := putOpen !listDoorV (List.nth !listDoorV pos);
-      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
     end
 ;;
 
-let rec isFinished listCell =
-  match listCell with
-  | [] -> true
-  | head::body ->
-     (match head.visited with
-      | true -> isFinished body
-      | false -> false)
+let add_Path pos =
+  List.append !listPath [{prevMove = pos}]
+;;
+
+let getPrevMove listPath =
+  if (List.length listPath) > 1
+  then
+    (List.hd (List.rev listPath)).prevMove
+  else
+    !start
+;;
+
+let removeLastElem listPath =
+  List.rev (List.tl (List.rev listPath))
+;;
+
+let check_Possibility pos =
+  if (getRightCell !listDoorH pos !listCell) = false
+     && (getLeftCell !listDoorH pos !listCell) = false
+     && (getUpCell !listDoorV pos !listCell) = false
+     && (getDownCell !listDoorV pos !listCell) = false
+  then false
+  else
+    true
+;;
+
+let print_wich_possibility pos =
+  if (getRightCell !listDoorH pos !listCell) = true
+  then print_string "right\n"
+  else if (getLeftCell !listDoorH pos !listCell) = true
+  then print_string "left\n"
+  else if (getUpCell !listDoorV pos !listCell) = true
+  then print_string "Up\n"
+  else if (getDownCell !listDoorV pos !listCell) = true
+  then print_string "Down\n"
+;;
+
+let is_Finished pos =
+  if (check_Possibility pos) = false
+  then
+    true
+  else
+    false;
+;;
 
 let rec fill_path pos =
   rand := (Random.int 4);
-  print_int rand;
-  print_endline "begin";
-  print_int pos;
-  print_endline "<- pos";
-  if (isFinished !listCell) = false
+  if (check_Possibility pos) = true
   then
     begin
-      if !rand = 1
+      if (is_Finished pos) = false
       then
         begin
-          if (getRightCell !listDoorH pos !listCell) == true
+          if !rand = 1
           then
             begin
-              open_door pos 1;
-              fill_path (pos + 1);
+              if (getRightCell !listDoorH pos !listCell) == true
+              then
+                begin
+                  open_door pos 1;
+                  listPath := add_Path (pos + 1);
+                  fill_path (pos + 1);
+                end
+              else
+                fill_path pos;
             end
-          else
-            fill_path pos;
-        end
-      else if !rand = 2
-      then
-        begin
-          if (getLeftCell !listDoorH pos !listCell) == true
+          else if !rand = 2
           then
             begin
-              open_door pos 2;
-              fill_path (pos - 1);
+              if (getLeftCell !listDoorH pos !listCell) == true
+              then
+                begin
+                  open_door pos 2;
+                  listPath := add_Path (pos - 1);
+                  fill_path (pos - 1);
+                end
+              else
+                fill_path pos;
             end
-          else
-            fill_path pos;
-        end
-      else if !rand = 3
-      then
-        begin
-          if (getUpCell !listDoorV pos !listCell) == true
+          else if !rand = 3
           then
             begin
-              open_door pos 3;
-              fill_path (pos - !x);
+              if (getUpCell !listDoorV pos !listCell) == true
+              then
+                begin
+                  open_door pos 3;
+                  listPath := add_Path (pos - !x);
+                  fill_path (pos - !x);
+                end
+              else
+                fill_path pos;
             end
           else
-            fill_path pos;
-        end
-      else
-        begin
-          if (getDownCell !listDoorV pos !listCell) == true
-          then
             begin
-              open_door pos 4;
-              fill_path (pos + !x);
+              if (getDownCell !listDoorV pos !listCell) == true
+              then
+                begin
+                  open_door pos 4;
+                  listPath := add_Path (pos + !x);
+                  fill_path (pos + !x);
+                end
+              else
+                fill_path pos;
             end
-          else
-            fill_path pos;
         end
     end
+  else if pos != !start
+  then
+    begin
+      (* print_maze !listCell !listDoorH !listDoorV !x !y 0 0; *)
+      rand := getPrevMove !listPath;
+      listPath := removeLastElem !listPath;
+      fill_path !rand;
+    end
+;;
+
+let rec print_list listCell =
+  match listCell with
+  | [] -> [];
+  | head::body ->
+     (match head.visited with
+      | true -> print_int 1;
+                print_list body;
+      | false ->
+         print_int 0;
+         print_list body)
 ;;
 
 let maze =
   Random.self_init();
+  if ((Array.length Sys.argv - 1) != 2) then
+    exit 0;
   x := int_of_string(Sys.argv.(1));
   y := int_of_string(Sys.argv.(2));
-  start := (Random.int (!x * !y) - 1);
-  listCell := fill_cell !x !y;
-  listDoorV := fill_doorV !x !y;
-  listDoorH := fill_doorH !x !y;
-  listCell := List.rev !listCell;
-  listDoorV := List.rev !listDoorV;
-  listDoorH := List.rev !listDoorH;
-  print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
-  fill_path !start;
-  print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+  if !x > 1 && !y > 1
+  then
+    begin
+      start := (Random.int (!x * !y) - 1);
+      cell_end := (Random.int (!x * !y) - 1);
+      if (!start < 0 || !start > (!x * !y))
+      then start := 0;
+      listCell := fill_cell !x !y;
+      listDoorV := fill_doorV !x !y;
+      listDoorH := fill_doorH !x !y;
+      listCell := List.rev !listCell;
+      listDoorV := List.rev !listDoorV;
+      listDoorH := List.rev !listDoorH;
+      listCell := putVisited !listCell (List.nth !listCell !start);
+      fill_path !start;
+      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
+    end
+  else
+    print_endline "./step1 [x > 1] [y > 1]";
 ;;
   
 let main =
