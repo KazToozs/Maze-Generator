@@ -1,5 +1,5 @@
 type path = {prevMove : int}
-type cell = {idx : int; visited : bool}
+type cell = {idx : int; visited : bool; isStart : bool; isEnd : bool}
 type door = {isOpen: bool; fstCellIdx : int; scdCellIdx : int}
 let rand = ref 0
 let cell_end = ref 0
@@ -14,11 +14,12 @@ let listDoorV = ref []
 let rec fill_cell a b l = match b with
   | 1 -> (match a with
           | 0 -> l;
-          | _ -> fill_cell (a - 1) b ({idx = a - 1; visited = false}::l)
+          | _ -> fill_cell (a - 1) b ({idx = a - 1; visited = false; isStart = false; isEnd = false}::l)
          )
   | _ -> (match a with
           | 0 -> fill_cell !x (b - 1) (l);
-          | _ -> fill_cell (a - 1) b ({idx = (a - 1) + (b - 1) * !x; visited = false}::l)
+          | _ -> fill_cell (a - 1) b ({idx = (a - 1) + (b - 1) * !x; visited = false; isStart = false;
+                                      isEnd = false}::l)
          )
 
 let rec fill_doorV a b l = match b with
@@ -43,13 +44,37 @@ let rec fill_doorH a b l = match b with
          )
 
 let doorIsOpen listDoorH x y x_lim =
-  (* print_int (x + (y * (x_lim - 1)) - 1); *)
   (List.nth listDoorH (x + (y * (x_lim - 1)) - 1)).isOpen;
 ;;
 
 let doorIsOpenV listDoorV x y x_lim =
-  (* print_int (x + ((y - 1) * (x_lim))); *)
   (List.nth listDoorV (x + ((y - 1) * x_lim))).isOpen;
+;;
+
+let isStart x y listCell x_lim =
+  (List.nth listCell (x + (y * x_lim))).isStart;
+;;
+
+let isEnd x y listCell x_lim =
+  (List.nth listCell (x + (y * x_lim))).isEnd;
+;;
+
+let print_start_or_end count y listCell =
+  if (((isStart count y listCell !x) = false) && (isEnd count y listCell !x) = false)
+  then
+    begin
+      print_string "|  ";
+    end
+  else if (isStart count y listCell !x) = true
+  then
+    begin
+      print_string "|ST";
+    end
+  else if (isEnd count y listCell !x) = true
+  then
+    begin
+      print_string "|ED";
+    end
 ;;
 
 let rec print_doorH listDoorH count x x_lim y y_lim =
@@ -59,21 +84,32 @@ let rec print_doorH listDoorH count x x_lim y y_lim =
       if count = 0
       then
         begin
-          print_string "|   ";
+          print_start_or_end x y !listCell;
           print_doorH listDoorH (count + 1) x x_lim y y_lim
         end
       else if count != (x_lim)
       then
         begin
-          if (doorIsOpen listDoorH count y x_lim) == true
+          if (doorIsOpen listDoorH count y x_lim) = true
           then
             begin
-              print_string "    ";
+              if isStart count y !listCell x_lim = false && isEnd count y !listCell x_lim = false
+              then
+                begin
+                  print_string "   ";
+                end
+              else if isStart count y !listCell x_lim = true
+              then
+                begin
+                  print_string " ST";
+                end
+              else
+                print_string " ED";
               print_doorH listDoorH (count + 1) x x_lim y y_lim
             end
           else
             begin
-              print_string "|   ";
+              print_start_or_end count y !listCell;
               print_doorH listDoorH (count + 1) x x_lim y y_lim
             end
         end
@@ -83,6 +119,7 @@ let rec print_doorH listDoorH count x x_lim y y_lim =
           print_char '|';
         end
     end
+;;
 
 let rec print_Vdoor listDoorV count x x_lim y y_lim=
   if ((x + (y * (x_lim - 1))) < (x_lim * y_lim)) && y < y_lim
@@ -91,55 +128,89 @@ let rec print_Vdoor listDoorV count x x_lim y y_lim=
       if count = 0
       then
         begin
-          print_string "\n+";
+          print_string "\n|";
           print_Vdoor listDoorV (count + 1) x x_lim y y_lim
-          end
-      else if count < (x_lim + 1)
+        end
+      else if count < (x_lim)
       then
         begin
           if (doorIsOpenV listDoorV (count - 1) y x_lim) == true
           then
             begin
-                print_string "   +";
-                if count == x_lim
-                then
-                  print_char '\n';
-                print_Vdoor listDoorV (count + 1) x x_lim y y_lim
+              print_string "  +";
+              print_Vdoor listDoorV (count + 1) x x_lim y y_lim
             end
           else
             begin
-              print_string "---+";
-              if count == x_lim
+              print_string "--+";
+              print_Vdoor listDoorV (count + 1) x x_lim y y_lim
+            end
+        end
+      else if count = (x_lim)
+      then
+        begin
+          if (doorIsOpenV listDoorV (count - 1) y x_lim) == true
+          then
+            begin
+              print_string "  |";
+              if count = (x_lim)
+              then
+                print_char '\n';
+              print_Vdoor listDoorV (count + 1) x x_lim y y_lim
+            end
+          else
+            begin
+              print_string "--|";
+              if count = (x_lim)
               then
                 print_char '\n';
               print_Vdoor listDoorV (count + 1) x x_lim y y_lim
             end
         end
     end
+;;
 
 let rec print_last_line count x_lim =
   if count != 0
   then
     begin
-
       if count = 1
       then
         begin
-          print_string "---+\n";
+          print_string "--+\n";
           print_last_line (count - 1) x_lim;
         end
-      else if count == x_lim
+      else if count = x_lim
       then
         begin
-          print_string "\n+---+";
+          print_string "\n+---";
           print_last_line (count - 1) x_lim;
         end
       else
         begin
-          print_string "---+";
+          print_string "---";
           print_last_line (count - 1) x_lim;
         end
     end
+
+let rec print_first_line count =
+  if count = 0
+  then
+    begin
+      print_string "+--";
+      print_first_line (count + 1)
+    end
+  else if (count + 1) = !x
+  then
+    begin
+      print_string "---+\n";
+    end
+  else
+    begin
+      print_string "---";
+      print_first_line (count + 1)
+    end
+;;
 
 let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
   match listCell with
@@ -152,8 +223,9 @@ let rec print_maze listCell listDoorH listDoorV x_lim y_lim x y =
            if x != x_lim
            then
              begin
-               print_string "+--+";
-               print_maze body listDoorH listDoorV x_lim y_lim (x + 1) y
+               print_first_line 0;
+               print_doorH listDoorH 0 x x_lim y y_lim;
+               print_maze body listDoorH listDoorV x_lim y_lim 0 (y + 1)
              end
            else
              begin
@@ -231,7 +303,8 @@ let rec putVisited listCell toMatch l =
   match listCell with
   | head::body ->
      if (toMatch.idx = head.idx)
-     then putVisited body toMatch ({idx = head.idx; visited = true}::l)
+     then putVisited body toMatch ({idx = head.idx; visited = true; isStart = head.isStart;
+                                   isEnd = head.isEnd}::l)
      else putVisited body toMatch (head::l)
   | [] -> List.rev l
 ;;
@@ -376,20 +449,42 @@ let rec fill_path pos =
     end
 ;;
 
-let rec print_list listDoor =
-  match listDoor with
+let rec print_list listCell =
+  match listCell with
   | [] -> [];
   | head::body ->
-     print_int head.fstCellIdx;
-
+     if (head.isStart = true)
+     then
+       print_endline "start";
      print_list body;
 ;;
 
-let setX a =
+let setY a =
   x := a
 
-let setY a =
+let setX a =
   y := a
+
+
+let rec putStart listCell toMatch l =
+  match listCell with
+  | head::body ->
+     if (toMatch.idx = head.idx)
+     then putStart body toMatch ({idx = head.idx; visited = false; isStart = true;
+                                   isEnd = head.isEnd}::l)
+     else putStart body toMatch (head::l)
+  | [] -> List.rev l
+;;
+
+let rec putEnd listCell toMatch l =
+  match listCell with
+  | head::body ->
+     if (toMatch.idx = head.idx)
+     then putEnd body toMatch ({idx = head.idx; visited = false; isStart = head.isStart;
+                                   isEnd = true}::l)
+     else putEnd body toMatch (head::l)
+  | [] -> List.rev l
+;;
 
 let maze () =
   x := 10;
@@ -398,8 +493,11 @@ let maze () =
              ("-c", Arg.Int (setY), "Y get");]
   in Arg.parse arg print_endline "Usage: ./step1 -r [x > 1] -c [y > 1]\n";
      Random.self_init();
-     start := (Random.int (!x * !y) - 1);
-     cell_end := (Random.int (!x * !y) - 1);
+     start := (Random.int ((!x * !y) - 1));
+     cell_end := (Random.int ((!x * !y) - 1));
+     if !cell_end = !start
+     then
+       cell_end := (Random.int (!x * !y) - 1);
      if (!start < 0 || !start > (!x * !y))
      then start := 0;
      listCell := fill_cell !x !y [];
@@ -408,6 +506,8 @@ let maze () =
      listCell := List.rev !listCell;
      listDoorV := List.rev !listDoorV;
      listDoorH := List.rev !listDoorH;
+     listCell := putStart !listCell (List.nth !listCell !start) [];
+     listCell := putEnd !listCell (List.nth !listCell !cell_end) [];
      listCell := putVisited !listCell (List.nth !listCell !start) [];
      fill_path !start;
      print_maze !listCell !listDoorH !listDoorV !x !y 0 0;
