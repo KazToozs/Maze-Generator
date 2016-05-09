@@ -87,6 +87,96 @@ let putVisited listCell pos =
   listCell.(pos).visited <- true;
 ;;
 
+let getRightCellR pos listCell =
+  if ((pos + 1) mod !x <> 0)
+  then
+    begin
+      match (listCell.(pos + 1)).visited with
+      | false -> (match (!listDoor.(pos - (pos / !x))).isOpen with
+        | false -> false
+        | true -> true)
+      | true -> false
+    end
+  else
+    false;
+;;
+
+let getLeftCellR pos listCell =
+  if (pos mod !x <> 0)
+  then
+    begin
+      match (listCell.(pos - 1)).visited with
+      | false -> (match (!listDoor.(pos - 1 - (pos / !x))).isOpen with
+        | false -> false
+        | true -> true)
+      | true -> false
+    end
+  else
+    false;
+;;
+
+let getUpCellR pos listCell =
+  if pos >= !x
+  then
+    begin
+      match (listCell.(pos - !x)).visited with
+      | false -> (match (!listDoor.((pos - !x) + ((!x - 1) * !y))).isOpen with
+        | false -> false
+        | true -> true)
+      | true -> false
+    end
+  else
+    false;
+;;
+
+let getDownCellR pos listCell =
+  if pos <= ((!x * !y) - 1 - !x)
+  then
+    begin
+      match (listCell.(pos + !x)).visited with
+      | false -> (match (!listDoor.((pos + ((!x - 1) * !y)))).isOpen with
+        | false -> false
+        | true -> true)
+      | true -> false
+    end
+  else
+    false;
+;;
+
+let rec highlight_path listPath listCell =
+    if ((Stack.is_empty listPath) = false) then
+      begin
+        (* print_int (removeLastElem listPath); *)
+        (* print_endline ""; *)
+        putVisited listCell (removeLastElem listPath);
+        highlight_path listPath listCell;
+      end
+;;
+
+let check_PossibilityR pos =
+  if (getRightCellR pos !listCell) = false
+     && (getLeftCellR pos !listCell) = false
+     && (getUpCellR pos !listCell) = false
+     && (getDownCellR pos !listCell) = false
+  then false
+  else
+    true
+;;
+
+let putNotVisited listCell pos =
+  listCell.(pos).visited <- false;
+;;
+
+let listLen lis = Array.length lis
+
+let rec reset_visited listCell i =
+  if i < listLen listCell then
+    begin
+      putNotVisited listCell i;
+      reset_visited listCell (i + 1)
+    end
+;;
+
 let add_Path pos listPath =
   Stack.push pos listPath
 ;;
@@ -136,6 +226,72 @@ let get_next_move pos stack =
     Stack.push 0 stack;
   rand := (get_nb (Random.int (Stack.length stack)) stack);
   Stack.clear stack;
+;;
+
+let get_next_moveR pos stack =
+  if (getRightCellR pos !listCell = true) then
+    Stack.push 1 stack;
+  if (getLeftCellR pos !listCell = true) then
+    Stack.push 2 stack;
+  if (getUpCellR pos !listCell = true) then
+    Stack.push 3 stack;
+  if (getDownCellR pos !listCell = true) then
+    Stack.push 0 stack;
+  rand := (get_nb (Random.int (Stack.length stack)) stack);
+  Stack.clear stack;
+;;
+
+let rec ressolve_path pos listPath =
+  if (check_PossibilityR pos) = true then
+    begin
+      get_next_moveR pos (Stack.create());
+      if !rand = 1 then
+        begin
+          set_path pos 1;
+          add_Path (pos + 1) listPath;
+          ressolve_path (pos + 1) listPath;
+        end
+      else if !rand = 2 then
+        begin
+          set_path pos 2;
+          add_Path (pos - 1) listPath;
+          ressolve_path (pos - 1) listPath;
+        end
+      else if !rand = 3 then
+        begin
+          set_path pos 3;
+          add_Path (pos - !x) listPath;
+          ressolve_path (pos - !x) listPath;
+        end
+      else
+        begin
+          set_path pos 4;
+          add_Path (pos + !x) listPath;
+          ressolve_path (pos + !x) listPath;
+        end
+    end
+  else if pos <> !start && pos <> !cell_end then
+    begin
+      if (Stack.is_empty listPath = false) then
+        begin
+          rand := Stack.top listPath;
+          if (check_PossibilityR !rand) = false then
+            begin
+              ressolve_path (removeLastElem listPath) listPath;
+            end
+          else
+            begin
+              ressolve_path !rand listPath;
+            end
+        end
+      else
+        ressolve_path !start listPath;
+    end
+  else
+    begin
+      reset_visited !listCell 0;
+      highlight_path listPath !listCell;
+    end
 ;;
 
 let putOpen listDoor pos =
@@ -334,19 +490,40 @@ let rec print_inter_line a b arr =
 let rec print_blank_line a b arr =
   if a = 0 then
     begin
-      print_string "|  ";
+      if (!listCell.(a + (b * !x)).isStart = true) then
+        print_string "|ST"
+      else if (!listCell.(a + (b * !x)).isEnd = true) then
+        print_string "|ED"
+      else if (!listCell.(a + (b * !x)).visited = true) then
+        print_string "|.."
+      else
+        print_string "|  ";
       print_blank_line (a + 1) b arr;
     end
   else if a < (!x - 1) then
     begin
       print_doorV a b !listDoor;
-      print_string "  ";
+      if (!listCell.(a + (b * !x)).isStart = true) then
+        print_string "ST"
+      else if (!listCell.(a + (b * !x)).isEnd = true) then
+        print_string "ED"
+      else if (!listCell.(a + (b * !x)).visited = true) then
+        print_string ".."
+      else
+        print_string "  ";
       print_blank_line (a + 1) b arr;
     end
   else if a = (!x - 1) then
     begin
       print_doorV a b !listDoor;
-      print_endline "  |";
+      if (!listCell.(a + (b * !x)).isStart = true) then
+        print_endline "ST|"
+      else if (!listCell.(a + (b * !x)).isEnd = true) then
+        print_endline "ED|"
+      else if (!listCell.(a + (b * !x)).visited = true) then
+        print_endline "..|"
+      else
+        print_endline "  |";
     end
 
 let rec print_rest a b arr count =
@@ -386,12 +563,14 @@ let maze () =
      Random.self_init();
      listCell := Array.make (!x * !y) {idx = 0; visited = false; isStart = false; isEnd = false};
      start := (Random.int ((!x * !y) - 1));
+     start := !start - (!start mod !x);
      setCellEnd !x !y;
-     if !cell_end = !start
-     then
+     if !cell_end = !start then
        setCellEnd !x !y;
-     if (!start < 0 || !start > (!x * !y))
-     then start := 0;
+     print_int !start;
+     print_endline "";
+     print_int !cell_end;
+     print_endline "";
      listCell := fill_cell (!x * !y) 0 !listCell;
      listDoor := fill_door x y !x;
      !listCell.(!start) <- {idx = !listCell.(!start).idx; visited = true;
@@ -399,5 +578,9 @@ let maze () =
      !listCell.(!cell_end) <- {idx = !listCell.(!cell_end).idx; visited = false;
                             isStart = false; isEnd = true};
      fill_path !start (Stack.create());
+     reset_visited !listCell 0;
+     putVisited !listCell !start;
+     ressolve_path !start (Stack.create());
+     putVisited !listCell !start;
      print_arr !x !y !listCell;
 ;;
