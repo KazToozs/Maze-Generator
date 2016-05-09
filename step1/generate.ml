@@ -114,7 +114,6 @@ let set_path pos move =
     end
 ;;
 
-
 let rec get_nb count stack =
   match count with
   | 0 -> Stack.pop stack;
