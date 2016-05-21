@@ -567,10 +567,6 @@ let maze () =
      setCellEnd !x !y;
      if !cell_end = !start then
        setCellEnd !x !y;
-     print_int !start;
-     print_endline "";
-     print_int !cell_end;
-     print_endline "";
      listCell := fill_cell (!x * !y) 0 !listCell;
      listDoor := fill_door x y !x;
      !listCell.(!start) <- {idx = !listCell.(!start).idx; visited = true;
